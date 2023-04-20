@@ -1,7 +1,11 @@
 package com.hmdp.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.entity.User;
+import com.hmdp.ibo.SendCodeIBO;
+
+import javax.servlet.http.HttpSession;
 
 /**
  * <p>
@@ -13,4 +17,11 @@ import com.hmdp.entity.User;
  */
 public interface IUserService extends IService<User> {
 
+    /**
+     * 发验证码
+     * @param phoneIBO
+     */
+    long sendCode(SendCodeIBO phoneIBO);
+
+    void login(LoginFormDTO loginForm, HttpSession session);
 }
