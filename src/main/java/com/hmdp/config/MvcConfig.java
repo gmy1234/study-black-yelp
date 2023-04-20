@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import com.hmdp.interceptor.LoginInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -26,12 +27,15 @@ public class MvcConfig implements WebMvcConfigurer {
     @Value("${yelp.exclude-path}")
     String path;
 
+    @Resource
+    StringRedisTemplate stringRedisTemplate;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         String excludePath = appConfig.getExcludePath();
         String[] path = excludePath.split(",");
         ArrayList<String> pathList = CollUtil.toList(path);
-        registry.addInterceptor(new LoginInterceptor()).excludePathPatterns(pathList);
+        registry.addInterceptor(new LoginInterceptor(stringRedisTemplate))
+                .excludePathPatterns(pathList);
     }
 }
