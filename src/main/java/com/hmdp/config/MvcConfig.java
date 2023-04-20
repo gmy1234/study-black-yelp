@@ -23,6 +23,9 @@ public class MvcConfig implements WebMvcConfigurer {
     @Resource
     AppConfig appConfig;
 
+    @Value("${yelp.exclude-path}")
+    String path;
+
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

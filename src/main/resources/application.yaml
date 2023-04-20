@@ -28,4 +28,6 @@ logging:
 
 
 # 排除拦截的路径
-exclude-path: /user/code,/user/login,/blog/host,/shop/**,/shop-type/**,/voucher/**
+yelp:
+  exclude-path: /user/code,/user/login,/blog/host,/shop/**,/shop-type/**,/voucher/**
+  exclude: 12
