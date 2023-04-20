@@ -1,6 +1,5 @@
 package com.hmdp.service.impl;
 
-import cn.hutool.Hutool;
 import cn.hutool.core.util.PhoneUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,7 +10,7 @@ import com.hmdp.exception.BusinessException;
 import com.hmdp.ibo.SendCodeIBO;
 import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IUserService;
-import com.hmdp.utils.SystemConstants;
+import com.hmdp.constants.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
