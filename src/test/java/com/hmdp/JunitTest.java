@@ -1,5 +1,6 @@
 package com.hmdp;
 
+import cn.hutool.core.collection.CollUtil;
 import com.hmdp.config.AppConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -11,6 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 
 /**
  * @version 1.0
@@ -31,9 +33,10 @@ public class JunitTest {
 
     @Test
     public void test(){
-        System.out.println(path);
         String excludePath = appConfig.getExcludePath();
-        System.out.println(excludePath);
+        String[] path = excludePath.split(",");
+        ArrayList<String> pathList = CollUtil.toList(path);
+
     }
 
 }

@@ -10,9 +10,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Result {
+
     private Boolean success;
+
     private String errorMsg;
+
     private Object data;
+
     private Long total;
 
     public static Result ok(){

@@ -44,7 +44,7 @@ public class RefreshInterceptor implements HandlerInterceptor {
         final Map<Object, Object> userMap = stringRedisTemplate.opsForHash()
                 .entries(RedisConstants.LOGIN_USER_KEY + token);
         if (userMap.isEmpty()) {
-            log.info("无用户信息, 拦截");
+            log.info("RefreshInterceptor无用户信息, 拦截");
             response.setStatus(401);
             return false;
         }

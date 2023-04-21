@@ -33,8 +33,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @Slf4j
-@AllArgsConstructor
-@NoArgsConstructor
 public class LoginInterceptor implements HandlerInterceptor {
 
 
@@ -50,7 +48,7 @@ public class LoginInterceptor implements HandlerInterceptor {
 
         UserDTO user = UserHolder.getUser();
         if (Objects.isNull(user)){
-            log.info("无用户信息, 拦截");
+            log.info("LoginInterceptor无用户信息, 拦截");
             response.setStatus(401);
             return false;
         }

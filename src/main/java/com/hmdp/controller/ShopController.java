@@ -7,6 +7,7 @@ import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
 import com.hmdp.service.IShopService;
 import com.hmdp.constants.SystemConstants;
+import com.hmdp.service.impl.ShopServiceImpl;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -24,7 +25,8 @@ import javax.annotation.Resource;
 public class ShopController {
 
     @Resource
-    public IShopService shopService;
+    private IShopService shopService;
+
 
     /**
      * 根据id查询商铺信息
@@ -33,7 +35,7 @@ public class ShopController {
      */
     @GetMapping("/{id}")
     public Result queryShopById(@PathVariable("id") Long id) {
-        return Result.ok(shopService.getById(id));
+        return Result.ok(shopService.queryShopById(id));
     }
 
     /**

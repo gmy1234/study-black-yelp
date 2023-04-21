@@ -18,6 +18,7 @@ public enum StatusEnum implements CommonEnum {
     NOT_PHONE(1, "手机号不符合"),
     NOT_PHONE_CODE(2, "该手机号的验证码错误"),
     NOT_USER(401, "没有该用户信息"),
+    NOT_SHOP(3, "没有该店铺信息"),
 
 
 

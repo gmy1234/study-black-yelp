@@ -25,9 +25,6 @@ public class MvcConfig implements WebMvcConfigurer {
     @Resource
     AppConfig appConfig;
 
-    @Value("${yelp.exclude-path}")
-    String path;
-
     @Resource
     StringRedisTemplate stringRedisTemplate;
 
@@ -44,7 +41,8 @@ public class MvcConfig implements WebMvcConfigurer {
         String[] path = excludePath.split(",");
         ArrayList<String> pathList = CollUtil.toList(path);
         registry.addInterceptor(new LoginInterceptor())
-                .excludePathPatterns(pathList)
+//                .excludePathPatterns(pathList)
+                .excludePathPatterns("/**")
                 .order(1);
     }
 }
