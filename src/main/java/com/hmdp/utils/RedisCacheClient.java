@@ -1,10 +1,20 @@
 package com.hmdp.utils;
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
+import com.hmdp.constants.RedisConstants;
+import com.hmdp.entity.Shop;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
+import static com.hmdp.constants.RedisConstants.CACHE_NULL_TTL;
 
 /**
  * @author gmydl
@@ -22,9 +32,57 @@ public class RedisCacheClient {
     private StringRedisTemplate stringRedisTemplate;
 
 
-    public void set(String key, Object value){
-        
+    public void set(String key, Object value, Long time, TimeUnit unit){
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(value), time, unit);
     }
+
+
+    public void setWithLogicExpire(String key, Object value, Long time, TimeUnit unit){
+        // 设置逻辑过期时间
+        RedisData redisData = RedisData.builder()
+                .data(value)
+                .expireTime(LocalDateTime.now().plusSeconds(unit.toSeconds(time)))
+                .build();
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(redisData));
+    }
+
+
+    /**
+     * redis读数据，避免缓存穿透
+     * @param keyPrefix key 前缀
+     * @param id 数据id
+     * @param tClass 数据Class
+     * @param dbFallback 读数据库操作函数
+     * @param time 时间
+     * @param unit 时间单位
+     * @return 数据
+     * @param <T> 数据Class 或者null
+     * @param <ID> ID的类型
+     */
+    public <T, ID> T getPassThrough(String keyPrefix, ID id, Class<T> tClass, Function<ID, T> dbFallback, Long time, TimeUnit unit){
+        String key = keyPrefix + id;
+        String TJson = stringRedisTemplate.opsForValue().get(key);
+        if (StrUtil.isNotBlank(TJson)){
+            return  JSONUtil.toBean(TJson, tClass);
+        }
+        // 命中的是否为""
+        if ("".equals(TJson)) {
+            return null;
+        }
+
+        // 不存在，查数据库，并写入空值
+        T dbInfo = dbFallback.apply(id);
+        if (Objects.isNull(dbInfo)){
+            this.set(key, "", time, unit);
+            return null;
+        }
+
+        //存在 写入
+        this.set(key, dbInfo, time, unit);
+        return dbInfo;
+    }
+
+
 
 
 
