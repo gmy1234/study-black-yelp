@@ -31,4 +31,3 @@ logging:
 # 排除拦截的路径
 yelp:
   exclude-path: /user/code,/user/login,/blog/host,/shop/**,/shop-type/**,/voucher/**
-  exclude: 12

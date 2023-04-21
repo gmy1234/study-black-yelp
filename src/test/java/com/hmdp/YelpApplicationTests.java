@@ -4,13 +4,17 @@ import cn.hutool.core.util.PhoneUtil;
 import com.hmdp.config.AppConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
 
 @SpringBootTest
 @Slf4j
-class YelpApplicationTests {
+@RunWith(SpringRunner.class)
+public class YelpApplicationTests {
 
     @Resource
     private AppConfig appConfig;
@@ -27,8 +31,6 @@ class YelpApplicationTests {
         final String excludePath = appConfig.getExcludePath();
         final String[] split = excludePath.split(",");
         System.out.println(split);
-
-
     }
 
 

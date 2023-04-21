@@ -2,6 +2,7 @@ package com.hmdp.config;
 
 import cn.hutool.core.collection.CollUtil;
 import com.hmdp.interceptor.LoginInterceptor;
+import com.hmdp.interceptor.RefreshInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,10 +33,18 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+
+        // 拦截所有请求,并刷新token
+        registry.addInterceptor(new RefreshInterceptor(stringRedisTemplate))
+                .excludePathPatterns("/**")
+                .order(0);
+
+        // 拦截登陆请求
         String excludePath = appConfig.getExcludePath();
         String[] path = excludePath.split(",");
         ArrayList<String> pathList = CollUtil.toList(path);
-        registry.addInterceptor(new LoginInterceptor(stringRedisTemplate))
-                .excludePathPatterns(pathList);
+        registry.addInterceptor(new LoginInterceptor())
+                .excludePathPatterns(pathList)
+                .order(1);
     }
 }

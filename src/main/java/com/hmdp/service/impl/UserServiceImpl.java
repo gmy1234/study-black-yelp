@@ -2,6 +2,7 @@ package com.hmdp.service.impl;
 
 import ch.qos.logback.core.util.TimeUtil;
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.util.PhoneUtil;
 import cn.hutool.core.util.PhoneUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -28,9 +29,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
-import java.util.Objects;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -53,7 +52,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public long sendCode(SendCodeIBO phoneIBO) {
         String phone = phoneIBO.getPhone();
         boolean isPhone = PhoneUtil.isPhone(phone);
-        HttpSession httpSession = phoneIBO.getHttpSession();
+        // HttpSession httpSession = phoneIBO.getHttpSession();
         if (!isPhone) {
             throw new BusinessException(StatusEnum.NOT_PHONE);
         }
@@ -101,7 +100,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         final String token = UUID.randomUUID().toString();
         // 用户转hash，存储redis
         final UserDTO userDTO = BeanUtil.toBean(user, UserDTO.class);
-        stringRedisTemplate.opsForHash().putAll(RedisConstants.LOGIN_USER_KEY + token, BeanUtil.beanToMap(userDTO));
+        // 存用户
+        // user 的 ID 为long，redis序列化不了为string，需要将userDTO中的字段值都改为string
+        Map<String, Object> stringUserDTOMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                CopyOptions
+                        .create()
+                        .setIgnoreNullValue(true)
+                        .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
+        stringRedisTemplate.opsForHash().putAll(RedisConstants.LOGIN_USER_KEY + token, stringUserDTOMap);
+        // 设置过期时间
         stringRedisTemplate.expire(RedisConstants.LOGIN_USER_KEY + token, 30, TimeUnit.MINUTES);
 
         return Result.ok(token);
