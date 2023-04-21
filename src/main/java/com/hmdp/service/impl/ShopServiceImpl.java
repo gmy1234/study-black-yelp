@@ -12,9 +12,13 @@ import com.hmdp.service.IShopService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
+import static com.hmdp.constants.RedisConstants.CACHE_NULL_TTL;
 
 /**
  * <p>
@@ -31,8 +35,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     private StringRedisTemplate stringRedisTemplate;
 
 
-
-
     @Override
     public Result queryShopById(Long id) {
         String shopJson = stringRedisTemplate.opsForValue().get(RedisConstants.CACHE_SHOP_KEY + id);
@@ -40,14 +42,37 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             Shop shop = JSONUtil.toBean(shopJson, Shop.class);
             return Result.ok(shop);
         }
-        // 不存在，查数据库
-        Shop shopDB = this.getById(id);
-        if (Objects.isNull(shopDB)){
-            throw new BusinessException(StatusEnum.NOT_SHOP);
+        // 命中的是否为""
+        if ("".equals(shopJson)) {
+            return Result.fail(StatusEnum.NOT_SHOP.getDesc());
         }
 
+        // 不存在，查数据库，并写入空值
+        stringRedisTemplate.opsForValue()
+                .set(RedisConstants.CACHE_SHOP_KEY + id, "", CACHE_NULL_TTL, TimeUnit.MINUTES);
+
+        Shop shopDB = this.getById(id);
+        if (Objects.isNull(shopDB)){
+            return Result.fail(StatusEnum.NOT_SHOP.getDesc());
+         }
+
         //存在
-        stringRedisTemplate.opsForValue().set(RedisConstants.CACHE_SHOP_KEY + id, JSONUtil.toJsonStr(shopDB));
+        stringRedisTemplate.opsForValue()
+                .set(RedisConstants.CACHE_SHOP_KEY + id, JSONUtil.toJsonStr(shopDB), 30, TimeUnit.MINUTES);
         return Result.ok(shopDB);
+    }
+
+    @Override
+    @Transactional
+    public void updateShop(Shop shop) {
+        Long id = shop.getId();
+        if (Objects.isNull(id)){
+            throw new BusinessException(StatusEnum.NOT_SHOP_ID);
+        }
+        // 更新数据库
+        this.updateById(shop);
+
+        // 删缓存
+        stringRedisTemplate.delete(RedisConstants.CACHE_SHOP_KEY + id);
     }
 }

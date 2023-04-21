@@ -7,4 +7,6 @@ public class SystemConstants {
     public static final int MAX_PAGE_SIZE = 10;
 
     public static final String USER = "user";
+
+    Integer SUCCESS = 0;
 }
