@@ -60,7 +60,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         if ("".equals(shopJson)) {
             return null;
         }
-
         // 不存在，查数据库，并写入空值
         Shop shopDB = this.getById(id);
         if (Objects.isNull(shopDB)){
@@ -68,7 +67,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
                     .set(RedisConstants.CACHE_SHOP_KEY + id, "", CACHE_NULL_TTL, TimeUnit.MINUTES);
             return null;
         }
-
         //存在
         stringRedisTemplate.opsForValue()
                 .set(RedisConstants.CACHE_SHOP_KEY + id, JSONUtil.toJsonStr(shopDB), 30, TimeUnit.MINUTES);

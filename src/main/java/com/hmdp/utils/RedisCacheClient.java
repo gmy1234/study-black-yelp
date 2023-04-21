@@ -1,5 +1,6 @@
 package com.hmdp.utils;
 
+import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.hmdp.constants.RedisConstants;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -30,6 +33,7 @@ public class RedisCacheClient {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
 
 
     public void set(String key, Object value, Long time, TimeUnit unit){
@@ -82,10 +86,48 @@ public class RedisCacheClient {
         return dbInfo;
     }
 
+    public static final ExecutorService CHCHE_REBUILD_EXCEUTOR = Executors.newFixedThreadPool(10);
+
+    /**
+     * 缓存击穿
+     * @param keyPrefix
+     * @param id
+     * @param tClass
+     * @param dbFallback
+     * @param time
+     * @param unit
+     * @return
+     * @param <T>
+     * @param <ID>
+     */
+    public <T, ID> T getMutix(String keyPrefix, ID id, Class<T> tClass, Function<ID, T> dbFallback, Long time, TimeUnit unit){
+        String key = keyPrefix + id;
+        String TJson = stringRedisTemplate.opsForValue().get(key);
+        if (StrUtil.isNotBlank(TJson)){
+            return  JSONUtil.toBean(TJson, tClass);
+        }
+        // 命中的是否为""
+        if ("".equals(TJson)) {
+            return null;
+        }
+        // redis不存在
+
+       // todo
+        return null;
+    }
 
 
 
+    private boolean tryLock(String key){
+        Boolean flag = stringRedisTemplate.opsForValue()
+                .setIfAbsent(key, "1", 10, TimeUnit.MICROSECONDS);
 
+        return BooleanUtil.isTrue(flag);
+    }
+
+    private void unLock(String key){
+        stringRedisTemplate.delete(key);
+    }
 
 
 
