@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * <p>
@@ -69,14 +71,18 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         }
 
         // 已经开始 减少库存
-        if (seckillVoucher.getStock() < 1) {
+        int stock = seckillVoucher.getStock();
+        if (stock < 1) {
             log.error("秒杀优惠券的库存不足");
             return Result.fail("秒杀优惠券的库存不足");
         }
 
-        // 库存充足 减少
+        // 库存充足 减少 (乐观锁)
         seckillVoucher.setStock(seckillVoucher.getStock() - 1);
-        boolean success = seckillVoucherService.updateById(seckillVoucher);
+        boolean success = seckillVoucherService.lambdaUpdate()
+                .gt(SeckillVoucher::getStock, 0)
+                .eq(SeckillVoucher::getVoucherId, voucherId)
+                .update(seckillVoucher);
         if (!success) {
             log.error("秒杀优惠券的库存减少失败");
             return Result.fail("秒杀优惠券的库存减少失败");
