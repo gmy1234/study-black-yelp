@@ -1,7 +1,5 @@
 package com.hmdp.service.impl;
 
-import ch.qos.logback.core.util.TimeUtil;
-import cn.hutool.core.date.DateUtil;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.entity.Voucher;
@@ -13,16 +11,13 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.service.IVoucherService;
 import com.hmdp.utils.RedisIdWorker;
 import com.hmdp.utils.UserHolder;
-import javafx.scene.control.Skin;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * <p>
@@ -77,6 +72,28 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail("秒杀优惠券的库存不足");
         }
 
+        Long userId = UserHolder.getUser().getId();
+        // 先释放锁，在提交事物，会导致事物不生效
+        // 因此需要，再提交时候之后，再释放锁
+        synchronized (userId.toString().intern()){
+            IVoucherOrderService proxy =(IVoucherOrderService) AopContext.currentProxy();
+            // return this.createVoucherOrder(voucherId, seckillVoucher);
+            // 使用this当前对象，可能会导致事物失效，使用代理对象(事物有关的代理对象)
+            return proxy.createVoucherOrder(voucherId, seckillVoucher);
+        }
+    }
+
+    @Transactional
+    public Result createVoucherOrder(Long voucherId, SeckillVoucher seckillVoucher) {
+        // 一人一单+
+        int count = this.lambdaQuery()
+                .eq(VoucherOrder::getUserId, UserHolder.getUser().getId())
+                .eq(VoucherOrder::getVoucherId, voucherId)
+                .count();
+        if (count > 1){
+            log.error("该用户多单");
+            return Result.fail("该用户多单");
+        }
         // 库存充足 减少 (乐观锁)
         seckillVoucher.setStock(seckillVoucher.getStock() - 1);
         boolean success = seckillVoucherService.lambdaUpdate()
