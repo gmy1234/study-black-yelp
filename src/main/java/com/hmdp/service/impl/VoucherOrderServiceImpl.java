@@ -1,5 +1,6 @@
 package com.hmdp.service.impl;
 
+import com.hmdp.config.RedisConfig;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.entity.Voucher;
@@ -12,6 +13,9 @@ import com.hmdp.service.IVoucherService;
 import com.hmdp.strategy.SimpleRedisLock;
 import com.hmdp.utils.RedisIdWorker;
 import com.hmdp.utils.UserHolder;
+import org.redisson.Redisson;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -43,6 +47,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private RedissonClient redissonClient;
 
     @Override
     @Transactional
@@ -76,21 +83,24 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             log.error("秒杀优惠券的库存不足");
             return Result.fail("秒杀优惠券的库存不足");
         }
-
         Long userId = UserHolder.getUser().getId();
-        // 先释放锁，在提交事物，会导致事物不生效
-        // 因此需要，再提交时候之后，再释放锁
-        SimpleRedisLock simpleRedisLock = new SimpleRedisLock(stringRedisTemplate, "order:" + userId);
-        boolean isLock = simpleRedisLock.tryLock(10L);
+        // 使用redis充当分布式锁，实现一人一单
+        // SimpleRedisLock simpleRedisLock = new SimpleRedisLock(stringRedisTemplate, "order:" + userId);
+        RLock redisLock = redissonClient.getLock("lock:order:" + userId);
+        boolean isLock = redisLock.tryLock();
         if (!isLock) {
             return Result.fail("获取锁失败,不允许重复下单");
         }
 
+        // 先释放锁，在提交事物，会导致事物不生效
+        // 因此需要，再提交时候之后，再释放锁
         synchronized (userId.toString().intern()){
             IVoucherOrderService proxy =(IVoucherOrderService) AopContext.currentProxy();
             // return this.createVoucherOrder(voucherId, seckillVoucher);
             // 使用this当前对象，可能会导致事物失效，使用代理对象(事物有关的代理对象)
-            return proxy.createVoucherOrder(voucherId, seckillVoucher);
+            Result voucherOrder = proxy.createVoucherOrder(voucherId, seckillVoucher);
+            redisLock.unlock();
+            return voucherOrder;
         }
     }
 
@@ -124,7 +134,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 .voucherId(voucherId)
                 .build();
         this.save(voucherOrder);
-
         return Result.ok(orderId);
     }
 }

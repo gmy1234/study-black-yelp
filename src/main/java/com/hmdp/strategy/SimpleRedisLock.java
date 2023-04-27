@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import javax.annotation.Resource;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,10 +30,12 @@ public class SimpleRedisLock implements Lock{
 
     public static final String KEY_PREFIX = "lick:";
 
+    public static final String UUID_PREDIX = UUID.randomUUID().toString();
+
     @Override
     public boolean tryLock(Long timeoutSec) {
-        long threadId = Thread.currentThread().getId();
-        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(KEY_PREFIX + lockName, threadId + "",
+        String threadId = UUID_PREDIX + Thread.currentThread().getId();
+        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(KEY_PREFIX + lockName, threadId,
                 timeoutSec, TimeUnit.SECONDS);
         return Boolean.TRUE.equals(flag);
     }
