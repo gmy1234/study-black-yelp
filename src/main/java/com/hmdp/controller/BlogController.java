@@ -10,6 +10,8 @@ import com.hmdp.service.IBlogService;
 import com.hmdp.service.IUserService;
 import com.hmdp.constants.SystemConstants;
 import com.hmdp.utils.UserHolder;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -25,6 +27,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/blog")
+@Api(tags = "探店笔记模块")
 public class BlogController {
 
     @Resource
@@ -33,6 +36,7 @@ public class BlogController {
     private IUserService userService;
 
     @PostMapping
+    @ApiOperation("发布探店笔记")
     public Result saveBlog(@RequestBody Blog blog) {
         // 获取登录用户
         UserDTO user = UserHolder.getUser();
@@ -44,6 +48,7 @@ public class BlogController {
     }
 
     @PutMapping("/like/{id}")
+    @ApiOperation("点赞探店笔记")
     public Result likeBlog(@PathVariable("id") Long id) {
         // 修改点赞数量
         blogService.update()
