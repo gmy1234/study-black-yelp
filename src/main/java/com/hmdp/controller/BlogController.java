@@ -47,13 +47,16 @@ public class BlogController {
         return Result.ok(blog.getId());
     }
 
+    @GetMapping("/{id}")
+    @ApiOperation("获取探店笔记详情")
+    public Result getBlogDetail(@PathVariable Long id) {
+        return Result.ok(blogService.getBlogDetail(id));
+    }
+
     @PutMapping("/like/{id}")
     @ApiOperation("点赞探店笔记")
     public Result likeBlog(@PathVariable("id") Long id) {
-        // 修改点赞数量
-        blogService.update()
-                .setSql("liked = liked + 1").eq("id", id).update();
-        return Result.ok();
+        return blogService.like(id);
     }
 
     @GetMapping("/of/me")
@@ -84,5 +87,12 @@ public class BlogController {
             blog.setIcon(user.getIcon());
         });
         return Result.ok(records);
+    }
+
+    @GetMapping("/like/list")
+    @ApiOperation("获取博客的点赞信息")
+    public Result likeList(@RequestParam Long id) {
+        List<UserDTO> res = blogService.likeList(id);
+        return Result.ok(res);
     }
 }
