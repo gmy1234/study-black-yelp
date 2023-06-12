@@ -8,10 +8,12 @@ import com.hmdp.constants.SystemConstants;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
+import com.hmdp.entity.Follow;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.BlogMapper;
 import com.hmdp.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hmdp.service.IFollowService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.UserHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -40,6 +42,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     private StringRedisTemplate stringRedisTemplate;
     @Resource
     private IUserService userService;
+
+    @Resource
+    private IFollowService followService;
 
     @Override
     public Blog getBlogDetail(Long id) {
@@ -99,6 +104,41 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
                 .map(item -> BeanUtil.copyProperties(item, UserDTO.class))
                 .collect(Collectors.toList());
 
+    }
+
+    @Override
+    public void saveBlog(Blog blog) {
+        // 获取登录用户
+        UserDTO user = UserHolder.getUser();
+        blog.setUserId(user.getId());
+        // 保存探店博文
+        this.save(blog);
+        // 获取作者的所有粉丝
+        List<Follow> follows = followService.lambdaQuery()
+                .eq(Follow::getFollowUserId, user.getId())
+                .list();
+        // 推送给粉丝
+        for (Follow follow : follows) {
+            // 推荐
+
+
+
+        }
+
+
+
+    }
+
+    @Override
+    public Result queryBolgOfFollow(Long max, int offset) {
+        // 获取当前用户
+
+        // 查询收信息
+
+        //
+
+
+        return null;
     }
 
 
